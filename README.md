@@ -2,7 +2,7 @@
 
 This is a fork of https://bitbucket.org/jsosic/puppet-cobbler
 
-# Readme from https://bitbucket.org/jsosic/puppet-cobbler:
+# Old Readme.md:
 ***
 
 Puppet module for managing Cobbler
