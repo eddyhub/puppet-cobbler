@@ -1,5 +1,8 @@
 # puppet-cobbler
 
+I added more templates and modified some of the types and providers to suite my needs. In tests/init.pp you see more examples how to use this module.
+
+
 This is a fork of https://bitbucket.org/jsosic/puppet-cobbler
 
 # Old Readme.md:
