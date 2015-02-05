@@ -180,7 +180,7 @@ Puppet::Type.type(:cobblersystem).provide(:system) do
         ks_meta_value << "#{key}=#{val}" unless val=="~"
       end
     end
-    cobblerargs << ('--ks-meta=' + ks_meta_value * ' ')
+    cobblerargs << ('--ksmeta=' + ks_meta_value * ' ')
     # finally run command to set value
     cobbler(cobblerargs)
     # update property_hash
@@ -262,7 +262,7 @@ Puppet::Type.type(:cobblersystem).provide(:system) do
     self.virt_path        = @resource.should(:virt_path)        unless @resource[:virt_path].nil?        or self.virt_path        == @resource.should(:virt_path)
     self.virt_ram         = @resource.should(:virt_ram)         unless @resource[:virt_ram].nil?         or self.virt_ram         == @resource.should(:virt_ram)
     self.virt_type        = @resource.should(:virt_type)        unless @resource[:virt_type].nil?        or self.virt_type        == @resource.should(:virt_type)
-
+    self.ks_meta          = @resource.should(:ks_meta)   unless @resource[:ks_meta].nil?   or self.ks_meta   == @resource.should(:ks_meta)
     # sync state
     cobbler('sync')
 
