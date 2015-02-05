@@ -3,7 +3,7 @@
 #
 # This class manages Cobbler ( http://www.cobblerd.org/ )
 #
-
+#
 # === Parameters
 #
 # [*service_name*]
@@ -129,18 +129,27 @@
 #   Version of the puppet.
 #
 # [*authentication*]
-#   Type: string, default = 'configfile'
+#   Type: string, default: 'configfile'
+#   Sets the authentication type for cobbler. Possible are 'configfile' or 'ldap'
 #
+# [*ldap_server*]
+#   Type: string, default: 'grimlock.devel.redhat.com'
+#   Domain name of the ldap server.
 #
+# [*ldap_port*]
+#   Type: string, default: '389'
 #
-  $authentication      = $::cobbler::params::authentication,
-  $ldap_server         = $::cobbler::params::ldap_server,
-  $ldap_base_dn        = $::cobbler::params::ldap_base_dn,
-  $ldap_port           = $::cobbler::params::ldap_ports,
-  $ldap_tls            = $::cobbler::params::ldap_tls,
-  $ldap_search_bind_dn = $::cobbler::params::ldap_search_bind_dn,
-  $ldap_search_passwd  = $::cobbler::params::ldap_search_passwd,
-  $ldap_search_prefix  = $::cobbler::params::ldap_search_prefix,
+# [*ldap_tls*]
+#   Type: string, default: '1'
+#
+# [*ldap_search_bind_dn*]
+#   Type: string, default: ''
+#
+# [*ldap_search_passwd*]
+#   Type: string, default: ''
+#
+# [*ldap_search_prefix*]
+#   Type: string, default: ''
 # === Requires
 #
 # - puppetlabs/apache class
@@ -153,6 +162,7 @@
 # === Copyright
 #
 # Copyright 2014 Jakov Sosic <jsosic@gmail.com>
+#
 #
 class cobbler (
   $service_name        = $::cobbler::params::service_name,
