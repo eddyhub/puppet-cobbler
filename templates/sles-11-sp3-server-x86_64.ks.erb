@@ -1,0 +1,310 @@
+<?xml version="1.0"?>
+<!DOCTYPE profile>
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+  <timezone>
+    <hwclock>UTC</hwclock>
+    <timezone>Europe/Berlin</timezone>
+  </timezone>
+
+  <general>
+    <mode>
+      <confirm config:type="boolean">false</confirm>
+    </mode>
+  </general>
+
+  <!-- BEGIN SNIPPET: SuSE/networking.xml -->
+  <!-- https://github.com/cobbler/cobbler/blob/master/autoinstall_snippets/SuSE/networking.xml -->
+  #set $hostname = $getVar("hostname","")
+  #if $hostname == ""
+  #set $hostname = $getVar("system_name","cobbler")
+  #end if
+  #if $getVar("dns_name_eth0","") != ""
+  #set $my_hostname = $hostname.split('.',1)[:1][0]
+  #set $my_domainname = $dns_name_eth0.split('.',1)[1:][0]
+  #else
+  #set $my_hostname = $hostname
+  #set $my_domainname = "site"
+  #end if
+  <networking>
+    <keep_install_network config:type="boolean">false</keep_install_network>
+    <dhcp_options>
+      <dhclient_client_id></dhclient_client_id>
+      <dhclient_hostname_option></dhclient_hostname_option>
+    </dhcp_options>
+    <dns>
+      <dhcp_hostname config:type="boolean">false</dhcp_hostname>
+      <dhcp_resolv config:type="boolean">false</dhcp_resolv>
+      <write_hostname config:type="boolean">false</write_hostname>
+      <resolv_conf_policy></resolv_conf_policy>
+      <hostname>$my_hostname</hostname>
+      <domain>$my_domainname</domain>
+      #if $getVar("name_servers_search","") != ""
+      <searchlist config:type="list">
+	#for $sd in $name_servers_search
+	<search>$sd</search>
+	#end for
+      </searchlist>
+      #end if
+      <nameservers config:type="list">
+	#for $ns in $name_servers
+	<nameserver>$ns</nameserver>
+	#end for
+      </nameservers>
+    </dns>
+    <interfaces config:type="list">
+      #if $getVar("system_name","") != ""
+      #set $ikeys = $interfaces.keys()
+      #for $iface in $ikeys
+      #set $idata = $interfaces[$iface]
+      #set $mac = $idata["mac_address"]
+      #set $ip = $idata["ip_address"]
+      #set $netmask = $idata["netmask"]
+      #set $iface_type = $idata["interface_type"]
+      #set $bonding_opts = $idata["bonding_opts"]
+      #if $iface_type.lower() == "bond"
+      <interface>
+	<bonding_master>yes</bonding_master>
+	<bonding_module_opts>$bonding_opts.lower()</bonding_module_opts>
+	#set $loop_ikeys = $interfaces.keys()
+	#set $loop_counter = 0
+	#for $loop_iface in $loop_ikeys
+	#set $loop_idata = $interfaces[$loop_iface]
+	#set $loop_interface_type = $loop_idata["interface_type"]
+	#if $loop_interface_type.lower == "bond_slave"
+	#if $loop_idata["interface_master"] != ""
+	#if $loop_idata["interface_master"].lower() == $iface.lower()
+	<bonding_slave$loop_counter>$loop_iface</bonding_slave$loop_counter>
+	#set $loop_counter += 1
+	#end if
+	#end if
+	#end if
+	#end for
+	<bootproto>static</bootproto>
+	<device>$iface</device>
+	<ipaddr>$ip</ipaddr>
+	<netmask>$netmask</netmask>
+	<startmode>auto</startmode>
+	<usercontrol>no</usercontrol>
+      </interface>
+      #end if
+      #if $iface_type.lower() in ["bond_slave","bridge_slave"]
+      <interface>
+	<bootproto>none</bootproto>
+	<device>$iface</device>
+	<startmode>off</startmode>
+	<usercontrol>no</usercontrol>
+      </interface>
+      #end if
+      #if $iface_type.lower() in ["","na"]
+      <interface>
+	<bootproto>static</bootproto>
+	<device>$iface</device>
+	<lladdr>$mac.lower()</lladdr>
+	<ipaddr>$ip</ipaddr>
+	<netmask>$netmask</netmask>
+	<startmode>auto</startmode>
+	<usercontrol>no</usercontrol>
+      </interface>
+      #end if
+      #end for
+      #end if
+    </interfaces>
+    <managed config:type="boolean">false</managed>
+    <net-udev config:type="list">
+      #if $getVar("system_name","") != ""
+      #set $ikeys = $interfaces.keys()
+      #for $iface in $ikeys
+      #set $idata = $interfaces[$iface]
+      #set $mac = $idata["mac_address"]
+      #set $interface_type = $idata["interface_type"]
+      #if $mac.lower() != ""
+      #if $interface_type.lower() not in ["bond","bridge"]
+      <rule>
+	<name>$iface</name>
+	<rule>ATTR{address}</rule>
+	<value>$mac.lower()</value>
+      </rule>
+      #end if
+      #end if
+      #end for
+      #end if
+    </net-udev>
+    <routing>
+      <ip_forward config:type="boolean">false</ip_forward>
+      #if $getVar("system_name","") != ""
+      ## TODO: add in static routes here
+      <routes config:type="list">
+	<route>
+	  <destination>default</destination>
+	  <netmask>-</netmask>
+	  <device>-</device>
+	  <gateway>$gateway</gateway>
+	</route>
+      </routes>
+      #end if
+    </routing>
+  <!-- END SNIPPET: SuSE/networking.xml -->
+
+
+  <!-- Begin snippet: suse/hosts.xml -->
+  <!-- https://github.com/cobbler/cobbler/blob/master/autoinstall_snippets/SuSE/hosts.xml -->
+  <host>
+    <hosts config:type="list">
+      <hosts_entry>
+	<host_address>127.0.0.1</host_address>
+	<names config:type="list">
+	  <name>localhost</name>
+	</names>
+      </hosts_entry>
+      #if $getVar("system_name","") != ""
+      #set $ikeys = $interfaces.keys()
+      #for $iface in $ikeys
+      #set $idata = $interfaces[$iface]
+      #if $idata["interface_type"].lower() in ["","na","bridge","bond"]
+      <hosts_entry>
+	<host_address>$idata["ip_address"]</host_address>
+	<names config:type="list">
+	  #set $my_interface_hostname_short = $idata["dns_name"].split('.',1)[:1][0]
+	  <name>$idata["dns_name"].lower() $my_interface_hostname_short.lower()</name>
+	</names>
+      </hosts_entry>
+      #end if
+      #end for
+      #end if
+    </hosts>
+  </host>
+  <!-- End snippet: suse/hosts.xml -->
+
+  <ntp-client>
+    <configure_dhcp config:type="boolean">false</configure_dhcp>
+    <peers config:type="list">
+      <peer>
+	<address>$ntp_server</address>
+	<initial_sync config:type="boolean">true</initial_sync>
+	<options></options>
+	<type>server</type>
+      </peer>
+    </peers>
+    <start_at_boot config:type="boolean">true</start_at_boot>
+    <start_in_chroot config:type="boolean">true</start_in_chroot>
+  </ntp-client>
+
+  <software>
+    <patterns config:type="list">
+      <pattern>base</pattern>
+    </patterns>
+  </software>
+
+  <partitioning  config:type="list">
+    <drive>
+      <device>/dev/sda</device>
+      <initialize config:type="boolean">true</initialize>
+      <partitions config:type="list">
+	<partition>
+	  <create config:type="boolean">true</create>
+	  <filesystem config:type="symbol">ext3</filesystem>
+	  <format config:type="boolean">true</format>
+          <partition_nr config:type="integer">1</partition_nr>
+	  <size>auto</size>
+	  <mount>/boot</mount>
+	</partition>
+
+	<partition>
+	  <create config:type="boolean">true</create>
+	  <lvm_group>system</lvm_group>
+          <partition_nr config:type="integer">2</partition_nr>
+	  <size>max</size>
+	</partition>
+      </partitions>
+    </drive>
+
+    <drive>
+      <device>/dev/system</device>
+      <initialize config:type="boolean">true</initialize>
+      <is_lvm_vg config:type="boolean">true</is_lvm_vg>
+      <partitions config:type="list">
+	<partition>
+	  <create config:type="boolean">true</create>
+	  <filesystem config:type="symbol">ext3</filesystem>
+	  <format config:type="boolean">true</format>
+	  <lv_name>root</lv_name>
+          <mountby config:type="symbol">uuid</mountby>
+	  <mount>/</mount>
+	</partition>
+      </partitions>
+    </drive>
+  </partitioning>
+
+  <software>
+    <packages config:type="list">
+      <package>emacs-nox</package>
+      <package>xorg-x11-xauth</package>
+      <package>nagios-nrpe</package>
+      <package>autofs</package>
+      <package>sysstat</package>
+      <package>wget</package>
+      <package>perl-File-Tail</package>
+      <package>ruby</package>
+      <package>python</package>
+    </packages>
+  </software>
+
+  <users config:type="list">
+    <user>
+      <encrypted config:type="boolean">false</encrypted>
+      <fullname>root</fullname>
+      <gid>0</gid>
+      <home>/root</home>
+      <password_settings>
+        <expire></expire>
+        <flag></flag>
+        <inact></inact>
+        <max></max>
+        <min></min>
+        <warn></warn>
+      </password_settings>
+      <shell>/bin/bash</shell>
+      <uid>0</uid>
+      <user_password>$root_password</user_password>
+      <username>root</username>
+    </user>
+  </users>
+
+  <scripts>
+    <chroot-scripts config:type="list">
+      <!-- BEGIN SCRIPT: disable IPv6 -->
+      <script>
+	<chrooted config:type="boolean">true</chrooted>
+	<interpreter>shell</interpreter>
+	<filename>disable-ipv6.sh</filename>
+	<source>
+	  <![CDATA[
+		   echo 'alias net-pf-10 off' >> /etc/modprobe.conf.local
+		   echo 'alias ipv6      off' >> /etc/modprobe.conf.local
+	  ]]>
+	</source>
+      </script>
+      <!-- END SCRIPT: disable IPv6 -->
+    </chroot-scripts>
+
+    <init-scripts config:type="list">
+      <!-- BEGIN SCRIPT: run puppet -->
+      <script>
+	<filename>run-puppet.sh</filename>
+	<source>
+	  <![CDATA[
+		   /usr/bin/puppet agent -t --server $puppet_server --logdest /var/log/puppet --rundir /var/run/puppet --ssldir /var/lib/puppet/ssl --runinterval 99999999 --classfile /var/lib/puppet/classes.txt --localconfig /var/lib/puppet/localconfig --report true --pluginsync true --ignorecache true --environment $stage
+	  ]]>
+	</source>
+      </script>
+      <!-- END SCRIPT: run puppet -->
+    </init-scripts>
+
+    <suse_register>
+      <do_registration config:type="boolean">true</do_registration>
+      <reg_server>$suse_reg_server</reg_server>
+      <register_regularly config:type="boolean">false</register_regularly>
+      <submit_hwdata config:type="boolean">true</submit_hwdata>
+      <submit_optional config:type="boolean">true</submit_optional>
+    </suse_register>
+</profile>
