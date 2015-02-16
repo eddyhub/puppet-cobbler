@@ -1,11 +1,11 @@
 {
   "name": "puppet-cobbler",
   "version": "1.0.0",
-  "author": "eddy"
+  "author": "eddy",
   "original author": "jsosic",
   "summary": "Puppet module used to deploy and manage Cobbler installation(s).",
   "license": "Apache 2.0",
-  "source": "https://github.com/eddyhub/puppet-cobbler"
+  "source": "https://github.com/eddyhub/puppet-cobbler",
   "project_page": "https://github.com/eddyhub/puppet-cobbler",
   "issues_url": "https://github.com/eddyhub/puppet-cobbler/issues",
   "forked from": "https://bitbucket.org/jsosic/puppet-cobbler",
