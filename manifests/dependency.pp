@@ -9,4 +9,6 @@ class cobbler::dependency {
   include ::apache::mod::wsgi
   include ::apache::mod::proxy
   include ::apache::mod::proxy_http
+  include ::apache::mod::setenvif
+
 }
