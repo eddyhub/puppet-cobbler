@@ -1,0 +1,3 @@
+<%- require 'webrick' -%>
+<%- htpasswd=WEBrick::HTTPAuth::Htdigest.new("/tmp/cobbler_tmp_user.digest") -%>
+<%= "#{@file_user}:#{@file_realm}:#{htpasswd.set_passwd @file_realm, @file_user, @file_password}" %>

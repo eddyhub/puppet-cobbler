@@ -68,7 +68,7 @@
 #   Interface for DHCP to listen on.
 #
 # [*dhcp_subnets*]
-#   Type: array, default: 
+#   Type: array, default:
 #   If you use *DHCP relay* on your network, then $dhcp_interfaces
 #   won't suffice. $dhcp_subnets have to be defined, otherwise,
 #   DHCP won't offer address to a machine in a network that's
@@ -171,6 +171,7 @@ class cobbler (
   $distro_path         = $::cobbler::params::distro_path,
   $manage_dhcp         = $::cobbler::params::manage_dhcp,
   $dhcp_dynamic_range  = $::cobbler::params::dhcp_dynamic_range,
+  $dnsmasq_dhcp_range  = $::cobbler::params::dnsmasq_dhcp_range,
   $manage_dns          = $::cobbler::params::manage_dns,
   $dns_option          = $::cobbler::params::dns_option,
   $dhcp_option         = $::cobbler::params::dhcp_option,
@@ -205,6 +206,9 @@ class cobbler (
   $ldap_search_bind_dn = $::cobbler::params::ldap_search_bind_dn,
   $ldap_search_passwd  = $::cobbler::params::ldap_search_passwd,
   $ldap_search_prefix  = $::cobbler::params::ldap_search_prefix,
+  $file_user           = $::cobbler::params::file_user,
+  $file_realm          = $::cobbler::params::file_realm,
+  $file_password       = $::cobbler::params::file_password,
 ) inherits cobbler::params {
 
   # include dependencies
@@ -259,11 +263,13 @@ class cobbler (
   file { $distro_path :
     ensure => directory,
     mode   => '0755',
+    require => Package[$package_name],
   }
 
   file { "${distro_path}/kickstarts" :
     ensure => directory,
     mode   => '0755',
+    require => Package[$package_name],
   }
 
   file { "${cobbler_kickstarts_dir}":
@@ -325,19 +331,29 @@ class cobbler (
   }
 
   # include ISC DHCP or dnsmasq only if we choose manage_dhcp
-  if $manage_dhcp == '1' {
+  if $manage_dhcp == 'true' {
     if $dhcp_option == 'isc' {
     include ::cobbler::dhcp
     }
     else {
-      # include dnsmasq
-      include ::cobbler::dnsmasq
+      class{'cobbler::dnsmasq':
+        dnsmasq_dhcp_range => $dnsmasq_dhcp_range,
+      }
     }
   }
 
   # logrotate script
   file { '/etc/logrotate.d/cobbler':
     source => 'puppet:///modules/cobbler/logrotate',
+  }
+
+  if $authentication == 'configfile' {
+    file{'/etc/cobbler/users.digest':
+      ensure  => present,
+      mode    => '0600',
+      content => template('cobbler/users.digest'),
+      require => Package[$package_name],
+    }
   }
   #################### End: config section ####################
 

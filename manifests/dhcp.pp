@@ -12,7 +12,7 @@ class cobbler::dhcp (
   $interfaces      = $::cobbler::params::dhcp_interfaces,
   $subnets         = undef,
   $dynamic_range   = $::cobbler::params::dhcp_dynamic_range,
-) inherits cobbler::params {
+  ) inherits cobbler::params {
   include ::cobbler
 
   $dhcp_interfaces    = $interfaces

@@ -71,7 +71,7 @@ d-i mirror/http/directory string /ubuntu
 ##d-i mirror/http/proxy string $proxy
 
 ## Suite to install.
-##d-i mirror/suite string squeeze
+d-i mirror/suite string trusty
 ## Suite to use for loading installer components (optional).
 ##d-i mirror/udeb/suite string squeeze
 ## Components to use for loading installer components (optional).
@@ -231,7 +231,7 @@ d-i apt-setup/use_mirror boolean false
 ## Select which update services to use; define the mirrors to be used.
 ## Values shown below are the normal defaults.
 ##d-i apt-setup/services-select multiselect security
-##d-i apt-setup/security_host string security.ubuntu.com
+d-i apt-setup/security_host string $apt_cacher
 ##d-i apt-setup/security_path string /ubuntu
 
 ## Additional repositories, local[0-9] available

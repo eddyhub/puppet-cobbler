@@ -1,7 +1,7 @@
 #
-# = Class: cobbler::dhcp
+# = Class: cobbler::dnsmasq
 #
-# This module manages ISC DHCP for Cobbler
+# This module manages dnsmasq for Cobbler
 # https://fedorahosted.org/cobbler/
 #
 class cobbler::dnsmasq (

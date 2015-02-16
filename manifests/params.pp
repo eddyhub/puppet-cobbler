@@ -7,6 +7,7 @@ class cobbler::params {
   $cobbler_lib_dir = '/var/lib/cobbler'
   $cobbler_kickstarts_dir = "${cobbler_lib_dir}/kickstarts"
   $package_ensure = 'present'
+  $cobbler_settings_dir = '/etc/cobbler'
 
   case $::osfamily {
     'RedHat': {
@@ -58,17 +59,17 @@ class cobbler::params {
   $nameservers    = ['8.8.8.8', '8.8.4.4']
 
   # dhcp options
-  $manage_dhcp        = '0'
+  $manage_dhcp        = 'false'
   $dhcp_option        = 'dnsmasq'
   $dhcp_dynamic_range = '0'
   $dnsmasq_dhcp_range = "10.0.0.10,10.0.0.100"
 
   # dns options
-  $manage_dns = 0
+  $manage_dns = 'false'
   $dns_option = 'dnsmasq'
 
   # tftpd options
-  $manage_tftpd = 1
+  $manage_tftpd = 'true'
   $tftpd_option = 'in_tftpd'
 
   # puppet integration setup
@@ -89,4 +90,8 @@ class cobbler::params {
   $ldap_search_bind_dn = ''
   $ldap_search_passwd  = ''
   $ldap_search_prefix  = ''
+
+  $file_user           = 'cobbler'
+  $file_realm          = 'Cobbler'
+  $file_password       = ''
 }
