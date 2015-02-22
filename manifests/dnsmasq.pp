@@ -10,6 +10,8 @@ class cobbler::dnsmasq (
   $nameservers        = $::cobbler::params::nameservers,
   $subnets            = undef,
   $dnsmasq_dhcp_range = $::cobbler::params::dnsmasq_dhcp_range,
+  $next_server_ip     = $::cobbler::next_server_ip,
+  $default_gateway    = $::cobbler::default_gateway
 ) inherits cobbler::params {
   include ::cobbler
 

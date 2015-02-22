@@ -58,6 +58,10 @@
 #   Type: string, default: $::ipaddress
 #   Next server in PXE chain.
 #
+# [*default_gateway*]
+#   Type: string, default: ""
+#   Next server in PXE chain.
+#
 # [*nameservers*]
 #   Type: array, default: [ '8.8.8.8', '8.8.4.4' ]
 #   Nameservers for kickstart files to put in resolv.conf upon
@@ -179,6 +183,7 @@ class cobbler (
   $tftpd_option        = $::cobbler::params::tftpd_option,
   $server_ip           = $::cobbler::params::server_ip,
   $next_server_ip      = $::cobbler::params::next_server_ip,
+  $default_gateway     = '',
   $nameservers         = $::cobbler::params::nameservers,
   $dhcp_interfaces     = [ 'eth0' ],
   $dhcp_subnets        = '',
@@ -338,6 +343,7 @@ class cobbler (
     else {
       class{'cobbler::dnsmasq':
         dnsmasq_dhcp_range => $dnsmasq_dhcp_range,
+        default_gateway => $default_gateway
       }
     }
   }
