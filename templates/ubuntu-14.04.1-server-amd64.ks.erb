@@ -64,11 +64,13 @@ d-i netcfg/get_domain string unassigned-domain
 ##d-i choose-mirror/http/hostname string $server
 ##d-i choose-mirror/http/directory string $directory
 ##d-i choose-mirror/http/proxy string $proxy
+d-i choose-mirror/http/proxy string
 
 d-i mirror/country string manual
-d-i mirror/http/hostname string $apt_cacher
+d-i mirror/http/hostname string de.archive.ubuntu.com
 d-i mirror/http/directory string /ubuntu
 ##d-i mirror/http/proxy string $proxy
+d-i mirror/http/proxy string $apt_cacher
 
 ## Suite to install.
 d-i mirror/suite string trusty
@@ -118,6 +120,7 @@ d-i partman-lvm/device_remove_lvm boolean true
 d-i partman-md/device_remove_md boolean true
 ## And the same goes for the confirmation to write the lvm partitions.
 d-i partman-lvm/confirm boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true
 
 ## For LVM partitioning, you can select how much of the volume group to use
 ## for logical volumes.
@@ -162,7 +165,7 @@ d-i     partman-auto/expert_recipe string        \
                 lv_name{ swap }                  \
                 method{ swap }                   \
                 format{ }                        \
-            . 
+            .
 ########################################################
 
 
@@ -200,11 +203,11 @@ d-i partman/confirm_nooverwrite boolean true
 ## Configure APT to not install recommended packages by default. Use of this
 ## option can result in an incomplete system and should only be used by very
 ## experienced users.
-##d-i base-installer/install-recommends boolean false
+d-i base-installer/install-recommends boolean false
 
 ## The kernel image (meta) package to be installed; "none" can be used if no
 ## kernel is to be installed.
-d-i base-installer/kernel/image string linux-server
+d-i base-installer/kernel/image string linux-virtual
 
 ###### Account setup
 ## Skip creation of a root account (normal user account will be able to
@@ -215,10 +218,10 @@ d-i passwd/root-login boolean true
 d-i passwd/make-user boolean false
 
 ## Root password, either in clear text
-d-i passwd/root-password password df4378rhrskj
-d-i passwd/root-password-again password df4378rhrskj
+##d-i passwd/root-password password root-me
+##d-i passwd/root-password-again password root-me
 ## or encrypted using an MD5 hash.
-##d-i passwd/root-password-crypted password [MD5 hash]
+d-i passwd/root-password-crypted password $root_password
 
 ###### Apt setup
 ## You can choose to install restricted and universe software, or to install
@@ -231,8 +234,8 @@ d-i apt-setup/use_mirror boolean false
 ## Select which update services to use; define the mirrors to be used.
 ## Values shown below are the normal defaults.
 ##d-i apt-setup/services-select multiselect security
-d-i apt-setup/security_host string $apt_cacher
-##d-i apt-setup/security_path string /ubuntu
+d-i apt-setup/security_host string security.ubuntu.com
+d-i apt-setup/security_path string /ubuntu
 
 ## Additional repositories, local[0-9] available
 ## d-i apt-setup/local0/repository string $apt_cacher
@@ -256,21 +259,24 @@ d-i apt-setup/security_host string $apt_cacher
 ##tasksel tasksel/first multiselect lamp-server, print-server
 ##tasksel tasksel/first multiselect kubuntu-desktop
 tasksel tasksel/first multiselect openssh-server
+##tasksel tasksel/first multiselect virt-host
 
 ## Individual additional packages to install
 ##d-i pkgsel/include string openssh-server unzip ntp wget build-essential
-d-i pkgsel/include string openssh-server zsh emacs23-nox facter puppet scsitools unzip ntp autofs sysstat wget build-essential
+d-i pkgsel/include string zsh emacs23-nox facter puppet scsitools unzip ntp autofs sysstat wget build-essential
 ## Whether to upgrade packages after debootstrap.
 ## Allowed values: none, safe-upgrade, full-upgrade
-##d-i pkgsel/upgrade select none
+## d-i pkgsel/upgrade select none
 
 ## Language pack selection
+d-i pkgsel/language-pack-patterns string
+d-i pkgsel/install-language-support boolean false
 ##d-i pkgsel/language-packs multiselect de, en, zh
 
 ## Policy for applying updates. May be "none" (no automatic updates),
 ## "unattended-upgrades" (install security updates automatically), or
 ## "landscape" (manage system with Landscape).
-##d-i pkgsel/update-policy select none
+d-i pkgsel/update-policy select none
 
 ## Some versions of the installer can report back on what software you have
 ## installed, and what software you use. The default is not to report back,
@@ -361,18 +367,32 @@ d-i cdrom-detect/eject boolean false
 ## here's a way to run any shell command you'd like inside the installer,
 ## automatically.
 
+## create static network configuration.
+## I am using the cheetah engine to create the string so d-i preseed/late_command is easier to digest
+#set $lo = '\\nauto lo\\n iface lo inet loopback\\n'
+## the interfaces, we do only have eth0 and only use IPv4:
+#try
+#set $eth0_ipv4 = '\\nauto eth0\\niface eth0 inet static\\n address %s\\n netmask %s\\n gateway %s\\n dns-search %s\\n dns-nameservers %s' % ($interfaces['eth0']['ip_address'], $interfaces['eth0']['netmask'], $gateway, " ".join ($name_servers_search), " ".join($name_servers))
+#except
+#set $eth0_ipv4 = '\\nauto eth0\\niface eth0 inet dhcp'
+#end try
+## Finally, create the internal network interface:
+#set $interfaces_config = $lo+$eth0_ipv4
+#set ipv6_config = 'net.ipv6.conf.all.disable_ipv6=1\\nnet.ipv6.conf.default.disable_ipv6=1\\nnet.ipv6.conf.lo.disable_ipv6=1'
+
+## start puppet in the specified stage
+#set $puppet_run = "/usr/bin/puppet agent -t --server %s --logdest /var/log/puppet --rundir /var/run/puppet --ssldir /var/lib/puppet/ssl --runinterval 99999999 --classfile /var/lib/puppet/classes.txt --localconfig /var/lib/puppet/localconfig --report true --pluginsync true --ignorecache true --environment %s" % ($puppet_server, $stage)
+
+
+## disable netboot
+#set $nopxe = "/bin/echo -e pxe_still_enabled"
+#if $pxe_just_once in [1, "1", "true", "yes", "y"]
+#set nopxe = "wget \"http://%s/cblr/svc/op/nopxe/system/%s\" -O /dev/null" % ($http_server, $system_name)
+#end if
+
 ## This first command is run as early as possible, just after
 ## preseeding is read.
 ##d-i preseed/early_command string\
-##/bin/echo -e "auto lo" > /etc/network/interfaces;\
-##/bin/echo -e "iface lo inet loopback\n" >> /etc/network/interfaces;\
-##/bin/echo -e "auto eth0" >> /etc/network/interfaces;\
-##/bin/echo -e "iface eth0 inet static" >> /etc/network/interfaces;\
-##/bin/echo -e "address $ip_address_eth0" >> /etc/network/interfaces;\
-##/bin/echo -e "netmask $netmask_eth0" >> /etc/network/interfaces;\
-##/bin/echo -e "gateway $gateway" >> /etc/network/interfaces;\
-##/bin/echo -e "dns-nameservers ${" ".join($name_servers)}" >> /etc/network/interfaces;\
-##in-target /bin/echo -e "dns-search ${" ".join($name_servers_search)}" >> /etc/network/interfaces;\
 ## This command is run immediately before the partitioner starts. It may be
 ## useful to apply dynamic partitioner preseeding that depends on the state
 ## of the disks (which may not be visible when preseed/early_command runs).
@@ -383,15 +403,15 @@ d-i cdrom-detect/eject boolean false
 ## directly, or use the apt-install and in-target commands to easily install
 ## packages and run commands in the target system.
 ##d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
+## $interface_config is written twice, because if an error occurs (for example the puppet run)
+## the install scripts do not copy /etc/network/interfaces to /target/etc/network/interfaces
 d-i preseed/late_command string \
-/bin/echo -e "auto lo" > /etc/network/interfaces;\
-/bin/echo -e "iface lo inet loopback\n" >> /etc/network/interfaces;\
-/bin/echo -e "auto eth0" >> /etc/network/interfaces;\
-/bin/echo -e "iface eth0 inet static" >> /etc/network/interfaces;\
-/bin/echo -e "\taddress $ip_address_eth0" >> /etc/network/interfaces;\
-/bin/echo -e "\tnetmask $netmask_eth0" >> /etc/network/interfaces;\
-/bin/echo -e "\tgateway $gateway" >> /etc/network/interfaces;\
-/bin/echo -e "\tdns-nameservers ${" ".join($name_servers)}" >> /etc/network/interfaces;\
-/bin/echo -e "\tdns-search ${" ".join($name_servers_search)}" >> /etc/network/interfaces;\
-/bin/echo -e "search ${" ".join($name_servers_search)}" >> /etc/resolv.conf;\
-in-target /usr/bin/puppet agent -t --server $puppet_server --logdest /var/log/puppet --rundir /var/run/puppet --ssldir /var/lib/puppet/ssl --runinterval 99999999 --classfile /var/lib/puppet/classes.txt --localconfig /var/lib/puppet/localconfig --report true --pluginsync true --ignorecache true --environment $stage;
+/bin/echo -e "$interfaces_config" > /etc/network/interfaces;\
+/bin/echo -e "$interfaces_config" > /target/etc/network/interfaces;\
+/bin/echo -e "$ipv6_config" >> /target/etc/sysctl.conf;\
+$nopxe;\
+#if $run_puppet == "true"
+in-target $puppet_run;
+#else
+/bin/echo -e "We are done here";
+#end if
