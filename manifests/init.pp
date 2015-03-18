@@ -343,7 +343,8 @@ class cobbler (
     else {
       class{'cobbler::dnsmasq':
         dnsmasq_dhcp_range => $dnsmasq_dhcp_range,
-        default_gateway => $default_gateway
+        default_gateway => $default_gateway,
+        nameservers => $nameservers,
       }
     }
   }
